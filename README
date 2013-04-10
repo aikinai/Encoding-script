@@ -1,0 +1,1 @@
+This script encodes videos to H.264 MP4 using FFMPEG and Apple's afconvert (for higher quality audio).
