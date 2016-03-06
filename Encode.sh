@@ -3,9 +3,9 @@
 # Video parameters
 PRESET="slower"
 PROFILE="high"
-LEVEL="41"
+LEVEL="42"
 RESOLUTION="1080"
-BITRATE="2048k"
+BITRATE="8192k"
 PIXELFORMAT="yuvj420p"
 
 # Audio parameters
@@ -13,7 +13,7 @@ FREQUENCY="48"
 AUDIOBITRATE="128"
 STRATEGY="VBRC"
 STRATEGY_NUM="2"
-CHANNELS="1"
+CHANNELS="2"
 
 case $CHANNELS in
   1)
