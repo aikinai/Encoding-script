@@ -18,12 +18,27 @@ else
   ROTATE_ARG=" "
 fi
 
+# Set start time and stop time if defined
+if [ -n "$START" ]; then
+  START_ARG="-ss ${START}"
+else
+  START_ARG=" "
+fi
+if [ -n "$STOP" ]; then
+  STOP_ARG="-to ${STOP}"
+else
+  STOP_ARG=" "
+fi
+
 for INPUT in $@
 do
   OUTPUT="${INPUT%.*}.mp4"
 
   # Copy video and audio to MP4
-  ffmpeg -i "$INPUT" \
+  ffmpeg \
+    ${START_ARG} \
+    -i "$INPUT" \
+    ${STOP_ARG} \
     -c:a copy -c:v copy \
     -flags +global_header \
     -map_metadata 0:s:0 \
