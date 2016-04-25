@@ -35,6 +35,7 @@ do
   OUTPUT="${INPUT%.*}.mp4"
 
   # Copy video and audio to MP4
+  TZ="UTC" \
   ffmpeg \
     ${START_ARG} \
     -i "$INPUT" \
