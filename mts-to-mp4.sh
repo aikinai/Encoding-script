@@ -42,7 +42,9 @@ do
     ${STOP_ARG} \
     -c:a copy -c:v copy \
     -flags +global_header \
-    -map_metadata 0:s:0 \
+    -map_metadata 0 \
+    -map_metadata:s:v 0:s:v \
+    -map_metadata:s:a 0:s:a \
     -metadata creation_time="$(TZ=UTC stat -c '%y' "$INPUT" | sed 's/\.00000.*//')" \
     ${ROTATE_ARG} \
     "$OUTPUT"
