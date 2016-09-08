@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# 
+#
 # mts-to-mp4.sh
 # Converts MTS files to MP4 without transcoding
 # Copies all metadata
@@ -49,9 +49,16 @@ do
     ${ROTATE_ARG} \
     "$OUTPUT"
 
+  exiftool -overwrite_original -TagsFromFile "$INPUT" "$OUTPUT"
+
+  if [ -n "$LOCATION" ]; then
+    exiftool -overwrite_original -TagsFromFile "$LOCATION" -Location:all "$OUTPUT"
+  fi
+
   # Copy created and modified dates from mts
   SetFile \
     -d "$(GetFileInfo -d "$INPUT")" \
     -m "$(GetFileInfo -m "$INPUT")" \
     "$OUTPUT"
+
 done
