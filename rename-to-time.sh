@@ -14,5 +14,5 @@ do
   # Convert the extension to lowercase
   EXTENSION="${EXTENSION,,}"
   # Rename file to the ISO 8601 date
-  mv "${FILE}" "${DATETIME}.${EXTENSION}"
+  mv -iv "${FILE}" "${DATETIME}.${EXTENSION}"
 done
