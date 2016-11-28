@@ -44,7 +44,7 @@ else
   STOP_ARG=" "
 fi
 
-for INPUT in $@
+for INPUT in "$@"
 do
   # Use same filename for output
   OUTPUT="${INPUT%.*}.mp4"
@@ -95,7 +95,7 @@ do
       echo -e "\x1B[00;33mSet keywords to \x1B[01;35m${KEYWORDS}\x1B[00m"
       EXIF_CMD="${EXIF_CMD} -sep \", \" -keywords=\"${KEYWORDS}\""
     fi
-    eval "$EXIF_CMD ${OUTPUT}"
+    eval "$EXIF_CMD \"${OUTPUT}\""
   fi
 
   # Copy created and modified dates from original MTS
