@@ -73,6 +73,9 @@ do
     -map_metadata:s:v 0:s:v \
     -map_metadata:s:a 0:s:a \
     -metadata creation_time="${TIME_UTC}" \
+    -metadata creation_date="${TIME_UTC}" \
+    -metadata make="Sony" \
+    -metadata model="ILCE-6500" \
     ${ROTATE_ARG} \
     "$OUTPUT"
 
