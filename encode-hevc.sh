@@ -28,9 +28,9 @@
 
 # Set rotate argument as appropriate
 if [[ "$ROTATE" = "CW" ]]; then
-  ROTATE_ARG="-metadata:s:v:0 rotate=90"
+  ROTATE_ARG="-vf transpose=1"
 elif [[ "$ROTATE" = "CC" ]]; then
-  ROTATE_ARG="-metadata:s:v:0 rotate=270"
+  ROTATE_ARG="-vf transpose=2"
 else
   ROTATE_ARG=" "
 fi
