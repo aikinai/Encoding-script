@@ -26,15 +26,6 @@
 #     Comma-delimited list of keywords
 #
 
-# Set rotate argument as appropriate
-if [[ "$ROTATE" = "CW" ]]; then
-  ROTATE_ARG="-vf transpose=1"
-elif [[ "$ROTATE" = "CC" ]]; then
-  ROTATE_ARG="-vf transpose=2"
-else
-  ROTATE_ARG=" "
-fi
-
 # Set start time and stop time if defined
 if [ -n "$START" ]; then
   START_ARG="-ss ${START}"
@@ -55,6 +46,15 @@ do
   TIME_UTC="$(TZ=UTC stat -c '%y' "$INPUT" | sed 's/\.00000.*//')"
   # Lightroom doesn't respect the UTC time spec, so use local time for Date/Time Original
   TIME_LOCAL="$(stat -c '%y' "$INPUT" | sed 's/\.00000.*//')"
+
+  # Set rotate argument based on MacOS Finder tags
+  if [[ "$(tag -lN "$INPUT")" = "↻" ]]; then
+    ROTATE_ARG="-vf transpose=1"
+  elif [[ "$(tag -lN "$INPUT")" = "↺" ]]; then
+    ROTATE_ARG="-vf transpose=2"
+  else
+    ROTATE_ARG=" "
+  fi
 
   # Encode to MOV with x265 and FDK AAC
   # Copy as much metadata as FFMPEG can handle
