@@ -61,6 +61,7 @@ do
   # hvc1 tag is required for Quicktime playback
   TZ="UTC" \
   ffmpeg \
+    -n \
     ${START_ARG} \
     -i "$INPUT" \
     ${STOP_ARG} \
