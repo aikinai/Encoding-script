@@ -5,7 +5,7 @@
 # Copies as much original metadata and applies specified new metadata
 # Copies created and modified dates to the new file
 #
-# x265 encoder uses CRF=18 with medium preset
+# x265 encoder uses CRF=23 with medium preset
 # Audio is encoded with FDK AAC using default settings
 #
 # Optional new metadata:
@@ -67,7 +67,7 @@ do
     ${STOP_ARG} \
     -c:a libfdk_aac \
     -c:v libx265 \
-    -crf 18 \
+    -crf 23 \
     -tag:v hvc1 \
     -flags +global_header \
     -map_metadata 0 \
