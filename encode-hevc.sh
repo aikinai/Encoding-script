@@ -82,7 +82,7 @@ do
 
   # Use exiftool to copy more metadata that FFMPEG misses
   echo -e "\x1B[00;33mCopy all metadata from \x1B[01;35m${INPUT}\x1B[00m"
-  exiftool -overwrite_original -TagsFromFile "$INPUT" "-all:all>all:all" "$OUTPUT"
+  exiftool -overwrite_original -extractEmbedded -TagsFromFile "$INPUT" "-all:all>all:all" "$OUTPUT"
   # Set Date/Time Original to local time for Lightroom
   echo -e "\x1B[00;33mSet Date/Time Original to (local time) \x1B[01;35m${TIME_LOCAL}\x1B[00m"
   exiftool -overwrite_original -DateTimeOriginal="${TIME_LOCAL}" "$OUTPUT"
