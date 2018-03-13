@@ -115,4 +115,8 @@ do
     -d "$(GetFileInfo -d "$INPUT")" \
     -m "$(GetFileInfo -m "$INPUT")" \
     "$OUTPUT"
+
+  # Copy tags from original file
+  echo -e "\x1B[00;33mCopy MacOS Finder tags from \x1B[01;35m${INPUT}\x1B[00m"
+  tag --add "$(tag --no-name --list "$INPUT")" "$OUTPUT"
 done
