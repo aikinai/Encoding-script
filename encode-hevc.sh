@@ -48,9 +48,9 @@ do
   TIME_LOCAL="$(stat -c '%y' "$INPUT" | sed 's/\.00000.*//')"
 
   # Set rotate argument based on MacOS Finder tags
-  if [[ "$(tag -lN "$INPUT")" = "↻" ]]; then
+  if [[ "$(tag -lN "$INPUT")" = *"↻"* ]]; then
     ROTATE_ARG="-vf transpose=1"
-  elif [[ "$(tag -lN "$INPUT")" = "↺" ]]; then
+  elif [[ "$(tag -lN "$INPUT")" = *"↺"* ]]; then
     ROTATE_ARG="-vf transpose=2"
   else
     ROTATE_ARG=" "
