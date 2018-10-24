@@ -40,12 +40,12 @@ fi
 
 for INPUT in "$@"
 do
-  # Use same filename for output
+  EXTENSION="${INPUT##*.}"
+  # Use same filename .mov for output
+  # Assuming I don't encode anything that starts as .mov
   OUTPUT="${INPUT%.*}.mov"
   # The MP4 spec calls for UTC time, so use that for the creation/encoding time
   TIME_UTC="$(TZ=UTC stat -c '%y' "$INPUT" | sed 's/\.00000.*//')"
-  # Lightroom doesn't respect the UTC time spec, so use local time for Date/Time Original
-  TIME_LOCAL="$(stat -c '%y' "$INPUT" | sed 's/\.00000.*//')"
 
   # Set rotate argument based on MacOS Finder tags
   if [[ "$(tag -lN "$INPUT")" = *"↻"* ]]; then
@@ -82,16 +82,31 @@ do
 
   # Use exiftool to copy more metadata that FFMPEG misses
   echo -e "\x1B[00;33mCopy all metadata from \x1B[01;35m${INPUT}\x1B[00m"
+  # Try to copy everything first, but this will still miss some important tags
   exiftool -overwrite_original -extractEmbedded -TagsFromFile "$INPUT" "-all:all>all:all" "$OUTPUT"
-  # Set Date/Time Original to local time for Lightroom
-  echo -e "\x1B[00;33mSet Date/Time Original to (local time) \x1B[01;35m${TIME_LOCAL}\x1B[00m"
-  exiftool -overwrite_original -DateTimeOriginal="${TIME_LOCAL}" "$OUTPUT"
+  # Copy the important date/time tags that have time zone and seem to be respected by Apple
+  case "${EXTENSION}" in
+    mp4|MP4)
+      echo -e "\x1B[00;33mSet CreationDate and DateTimeOriginal from \x1B[01;35m${INPUT}\x1B[00;33m CreationDateValue\x1B[00m"
+      # MP4 dates have the same format but need to go from CreationDateValue to CreationDate
+      exiftool -overwrite_original -tagsfromfile "${INPUT}" '-CreationDate<CreationDateValue' '-DateTimeOriginal<CreationDateValue' "${OUTPUT}"
+      ;;
+    mts|MTS)
+      echo -e "\x1B[00;33mSet CreationDate and DateTimeOriginal from \x1B[01;35m${INPUT}\x1B[00;33m CreationDate\x1B[00m"
+      # DateTimeOriginal in MTS files has "DST" and such at the end which can't be written to MOV files,
+      # so strip that manually and then separately write to the MOV file instead of copying
+      DATETIME="$(exiftool -s -s -s -DateTimeOriginal "${INPUT}" | sed -e 's/ [[:alpha:]]\+$//')"
+      exiftool -overwrite_original -DateTimeOriginal="${DATETIME}" -CreationDate="${DATETIME}" "${OUTPUT}"
+      ;;
+  esac
 
+  # Copy location from other file if specified
   if [ -n "$LOCATION" ]; then
     echo -e "\x1B[00;33mCopy location from \x1B[01;35m${LOCATION}\x1B[00m"
     exiftool -overwrite_original -TagsFromFile "$LOCATION" -Location:all "$OUTPUT"
   fi
 
+  # Add description, rating, or keywords if they are set
   if [ -n "$DESCRIPTION" -o -n "$RATING" -o -n "$KEYWORDS" ]; then
     EXIF_CMD="exiftool -overwrite_original"
     if [ -n "$DESCRIPTION" ]; then
@@ -109,14 +124,14 @@ do
     eval "$EXIF_CMD \"${OUTPUT}\""
   fi
 
+  # Copy MacOS Finder tags from original file
+  echo -e "\x1B[00;33mCopy MacOS Finder tags from \x1B[01;35m${INPUT}\x1B[00m"
+  tag --add "$(tag --no-name --list "$INPUT")" "$OUTPUT"
+
   # Copy created and modified dates from original file
   echo -e "\x1B[00;33mCopy file created and modified date from \x1B[01;35m${INPUT}\x1B[00m"
   SetFile \
     -d "$(GetFileInfo -d "$INPUT")" \
     -m "$(GetFileInfo -m "$INPUT")" \
     "$OUTPUT"
-
-  # Copy tags from original file
-  echo -e "\x1B[00;33mCopy MacOS Finder tags from \x1B[01;35m${INPUT}\x1B[00m"
-  tag --add "$(tag --no-name --list "$INPUT")" "$OUTPUT"
 done
