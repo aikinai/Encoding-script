@@ -63,8 +63,8 @@ do
   ffmpeg \
     -n \
     ${START_ARG} \
-    -i "$INPUT" \
     ${STOP_ARG} \
+    -i "$INPUT" \
     -c:a libfdk_aac \
     -c:v libx265 \
     -crf 23 \
