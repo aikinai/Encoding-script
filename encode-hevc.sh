@@ -38,6 +38,13 @@ else
   STOP_ARG=" "
 fi
 
+# Set x265 parameter if defined
+if [ -n "$PRESET" ]; then
+  PRESET_ARG="-preset ${PRESET}"
+else
+  PRESET_ARG=" "
+fi
+
 for INPUT in "$@"
 do
   EXTENSION="${INPUT##*.}"
@@ -67,6 +74,7 @@ do
     -i "$INPUT" \
     -c:a libfdk_aac \
     -c:v libx265 \
+    ${PRESET_ARG} \
     -crf 23 \
     -tag:v hvc1 \
     -flags +global_header \
