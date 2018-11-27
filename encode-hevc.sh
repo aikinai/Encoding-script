@@ -51,6 +51,9 @@ do
   # Use same filename .mov for output
   # Assuming I don't encode anything that starts as .mov
   OUTPUT="${INPUT%.*}.mov"
+  if [ -f "${OUTPUT}" ]; then
+    OUTPUT="${INPUT%.*}-2.mov"
+  fi
   # The MP4 spec calls for UTC time, so use that for the creation/encoding time
   TIME_UTC="$(TZ=UTC stat -c '%y' "$INPUT" | sed 's/\.00000.*//')"
 
