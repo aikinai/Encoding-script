@@ -8,6 +8,7 @@
 for FILE in $@
 do
 
+  BASENAME="${FILE%.*}"
   EXTENSION="${FILE##*.}"
   EXTENSION="${EXTENSION,,}" # Convert to lowercase
   # MTS files have DateTimeOriginal set and MP4 files have LastUpdate
@@ -20,12 +21,29 @@ do
       DATETIME="$(exiftool -s -s -s -d "%Y-%m-%dT%H%M%S%z" -DateTimeOriginal ${FILE})"
       FILEDATE="$(exiftool -s -s -s -d "%m/%d/%Y %H:%M:%S" -DateTimeOriginal ${FILE})"
       ;;
+    xml|XML)
+      break # XML files handled later to make sure the name matches perfectly
+      ;;
   esac
 
   # Rename file to the ISO 8601 date
   NEWNAME="${DATETIME}.${EXTENSION}"
   echo -e "Rename ${FILE} → \x1B[00;33m${NEWNAME}\x1B[00m"
   mv -iv "${FILE}" "${NEWNAME}"
+
+  # Rename matching XML file if it exists
+  # The for loop is the best way to test if the file exists with globbing
+  # XML files have names like `C0001M01.XML` to match `C0001.MP4` so I use the
+  # globbing to be sure I get the matching XML file and rename with the exact
+  # same time as the video.
+  for XMLFILE in ${BASENAME}*.XML; do
+    if [ -e "$XMLFILE" ]; then
+      echo -e "Rename ${XMLFILE} → \x1B[00;33m${DATETIME}.xml\x1B[00m"
+      mv -iv "${XMLFILE}" "${DATETIME}.xml"
+    fi
+    # Don't actually need the loop, so break if it finds one
+    break
+  done
 
   # Set creation and modification dates to the same time
   echo -e "Set date → \x1B[00;33m${FILEDATE}\x1B[00m"
