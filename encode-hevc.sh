@@ -5,13 +5,17 @@
 # Copies as much original metadata and applies specified new metadata
 # Copies created and modified dates to the new file
 #
-# x265 encoder uses CRF=23 with medium preset
+# x265 encoder uses CRF=23 with medium preset unless overridden
 # Audio is encoded with FDK AAC using default settings
 #
-# Optional new metadata:
-#   ROTATE
-#     CW will rotate clockwise
-#     CC will rotate counterclockwise
+# Videos with ↻ or ↺ in their MacOS Finder tags will be rotated in the 
+# appropriate direction
+#
+# Options and metadata
+#   CRF
+#     x265 CRF parameter
+#   PRESET
+#     x265 preset parameter
 #   START
 #     Time to start video copy
 #   STOP
@@ -28,68 +32,113 @@
 
 # Set start time and stop time if defined
 if [ -n "$START" ]; then
-  START_ARG="-ss ${START}"
+  START_ARG=(
+  -ss
+  "${START}"
+  )
 else
-  START_ARG=" "
+  START_ARG=()
 fi
 if [ -n "$STOP" ]; then
-  STOP_ARG="-to ${STOP}"
+  STOP_ARG=(
+  -to
+  "${STOP}"
+  )
 else
-  STOP_ARG=" "
+  STOP_ARG=()
+fi
+
+# Set x265 CRF if defined; use 23 if not
+if [ -n "$CRF" ]; then
+  CRF_ARG=(
+  "-crf"
+  "${CRF}"
+  )
+else
+  CRF_ARG=(
+  "-crf"
+  "23"
+  )
 fi
 
 # Set x265 parameter if defined
 if [ -n "$PRESET" ]; then
-  PRESET_ARG="-preset ${PRESET}"
+  PRESET_ARG=(
+  -preset
+  "${PRESET}"
+  )
 else
-  PRESET_ARG=" "
+  PRESET_ARG=()
 fi
 
 for INPUT in "$@"
 do
-  EXTENSION="${INPUT##*.}"
+  DIRECTORY="$(dirname "${INPUT}")"
+  BASENAME="$(basename "${INPUT%.*}")"
   # Use same filename .mov for output
-  # Assuming I don't encode anything that starts as .mov
-  OUTPUT="${INPUT%.*}.mov"
+  # Or append -hevc if it already exists
+  OUTPUT="${DIRECTORY}/${BASENAME}.mov"
   if [ -f "${OUTPUT}" ]; then
-    OUTPUT="${INPUT%.*}-2.mov"
+    OUTPUT="${DIRECTORY}/${BASENAME}-hevc.mov"
   fi
   # The MP4 spec calls for UTC time, so use that for the creation/encoding time
   TIME_UTC="$(TZ=UTC stat -c '%y' "$INPUT" | sed 's/\.00000.*//')"
 
   # Set rotate argument based on MacOS Finder tags
   if [[ "$(tag -lN "$INPUT")" = *"↻"* ]]; then
-    ROTATE_ARG="-vf transpose=1"
+    ROTATE_ARG=(
+    -vf
+    "transpose=1"
+    )
   elif [[ "$(tag -lN "$INPUT")" = *"↺"* ]]; then
-    ROTATE_ARG="-vf transpose=2"
+    ROTATE_ARG=(
+    -vf
+    "transpose=2"
+    )
   else
-    ROTATE_ARG=" "
+    ROTATE_ARG=()
   fi
+
+  # Insert subtitles if SRT file exists in the same directory
+  if [ -f "${DIRECTORY}"/"${BASENAME}".srt ]; then
+    SUBTITLE_ARG=(
+    -vf
+    "subtitles="${DIRECTORY}"/"${BASENAME}".srt:force_style='FontName=Hiragino Sans W7,Fontsize=40,OutlineColour=&H30333333,Bold=-1'"
+    )
+  else
+    SUBTITLE_ARG=()
+  fi
+
+  # Set up ffmpeg arguments as an array since this is more robust and doesn't 
+  # break on the quotes in the subtitles option
+  FFMPEG_ARGS=(
+  -n
+  "${START_ARG[@]}"
+  "${STOP_ARG[@]}"
+  -i "${INPUT}"
+  -c:a libfdk_aac
+  -c:v libx265
+  "${PRESET_ARG[@]}"
+  "${CRF_ARG[@]}"
+  -tag:v hvc1
+  -flags +global_header
+  -map_metadata 0
+  -map_metadata:s:v 0:s:v
+  -map_metadata:s:a 0:s:a
+  -metadata creation_time'='"${TIME_UTC}"
+  -metadata creation_date'='"${TIME_UTC}"
+  -metadata make'='"Sony"
+  -metadata model'='"ILCE-6500"
+  "${SUBTITLE_ARG[@]}"
+  "${ROTATE_ARG[@]}"
+  "$OUTPUT"
+  )
 
   # Encode to MOV with x265 and FDK AAC
   # Copy as much metadata as FFMPEG can handle
   # hvc1 tag is required for Quicktime playback
   TZ="UTC" \
-  ffmpeg \
-    -n \
-    ${START_ARG} \
-    ${STOP_ARG} \
-    -i "$INPUT" \
-    -c:a libfdk_aac \
-    -c:v libx265 \
-    ${PRESET_ARG} \
-    -crf 23 \
-    -tag:v hvc1 \
-    -flags +global_header \
-    -map_metadata 0 \
-    -map_metadata:s:v 0:s:v \
-    -map_metadata:s:a 0:s:a \
-    -metadata creation_time="${TIME_UTC}" \
-    -metadata creation_date="${TIME_UTC}" \
-    -metadata make="Sony" \
-    -metadata model="ILCE-6500" \
-    ${ROTATE_ARG} \
-    "$OUTPUT"
+    ffmpeg "${FFMPEG_ARGS[@]}"
 
   # Use exiftool to copy more metadata that FFMPEG misses
   echo -e "\x1B[00;33mCopy all metadata from \x1B[01;35m${INPUT}\x1B[00m"
@@ -118,7 +167,7 @@ do
   fi
 
   # Add description, rating, or keywords if they are set
-  if [ -n "$DESCRIPTION" -o -n "$RATING" -o -n "$KEYWORDS" ]; then
+  if [ -n "$DESCRIPTION" ] || [ -n "$RATING" ] || [ -n "$KEYWORDS" ]; then
     EXIF_CMD="exiftool -overwrite_original"
     if [ -n "$DESCRIPTION" ]; then
       echo -e "\x1B[00;33mSet description to \x1B[01;35m${DESCRIPTION}\x1B[00m"
