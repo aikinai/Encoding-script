@@ -143,32 +143,32 @@ do
   # Use exiftool to copy more metadata that FFMPEG misses
   echo -e "\x1B[00;33mCopy all metadata from \x1B[01;35m${INPUT}\x1B[00m"
   # Try to copy everything first, but this will still miss some important tags
-  exiftool -overwrite_original -extractEmbedded -TagsFromFile "$INPUT" "-all:all>all:all" "$OUTPUT"
+  exiftool -api largefilesupport=1 -overwrite_original -extractEmbedded -TagsFromFile "$INPUT" "-all:all>all:all" "$OUTPUT"
   # Copy the important date/time tags that have time zone and seem to be respected by Apple
   case "${EXTENSION}" in
     mp4|MP4)
       echo -e "\x1B[00;33mSet CreationDate and DateTimeOriginal from \x1B[01;35m${INPUT}\x1B[00;33m CreationDateValue\x1B[00m"
       # MP4 dates have the same format but need to go from CreationDateValue to CreationDate
-      exiftool -overwrite_original -tagsfromfile "${INPUT}" '-CreationDate<CreationDateValue' '-DateTimeOriginal<CreationDateValue' "${OUTPUT}"
+      exiftool -api largefilesupport=1 -overwrite_original -tagsfromfile "${INPUT}" '-CreationDate<CreationDateValue' '-DateTimeOriginal<CreationDateValue' "${OUTPUT}"
       ;;
     mts|MTS)
       echo -e "\x1B[00;33mSet CreationDate and DateTimeOriginal from \x1B[01;35m${INPUT}\x1B[00;33m CreationDate\x1B[00m"
       # DateTimeOriginal in MTS files has "DST" and such at the end which can't be written to MOV files,
       # so strip that manually and then separately write to the MOV file instead of copying
-      DATETIME="$(exiftool -s -s -s -DateTimeOriginal "${INPUT}" | sed -e 's/ [[:alpha:]]\+$//')"
-      exiftool -overwrite_original -DateTimeOriginal="${DATETIME}" -CreationDate="${DATETIME}" "${OUTPUT}"
+      DATETIME="$(exiftool -api largefilesupport=1 -s -s -s -DateTimeOriginal "${INPUT}" | sed -e 's/ [[:alpha:]]\+$//')"
+      exiftool -api largefilesupport=1 -overwrite_original -DateTimeOriginal="${DATETIME}" -CreationDate="${DATETIME}" "${OUTPUT}"
       ;;
   esac
 
   # Copy location from other file if specified
   if [ -n "$LOCATION" ]; then
     echo -e "\x1B[00;33mCopy location from \x1B[01;35m${LOCATION}\x1B[00m"
-    exiftool -overwrite_original -TagsFromFile "$LOCATION" -Location:all "$OUTPUT"
+    exiftool -api largefilesupport=1 -overwrite_original -TagsFromFile "$LOCATION" -Location:all "$OUTPUT"
   fi
 
   # Add description, rating, or keywords if they are set
   if [ -n "$DESCRIPTION" ] || [ -n "$RATING" ] || [ -n "$KEYWORDS" ]; then
-    EXIF_CMD="exiftool -overwrite_original"
+    EXIF_CMD="exiftool -api largefilesupport=1 -overwrite_original"
     if [ -n "$DESCRIPTION" ]; then
       echo -e "\x1B[00;33mSet description to \x1B[01;35m${DESCRIPTION}\x1B[00m"
       EXIF_CMD="${EXIF_CMD} -description=\"${DESCRIPTION}\""
