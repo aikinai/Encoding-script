@@ -11,7 +11,9 @@ do
   BASENAME="${FILE%.*}"
   EXTENSION="${FILE##*.}"
   EXTENSION="${EXTENSION,,}" # Convert to lowercase
-  # MTS files have DateTimeOriginal set and MP4 files have LastUpdate
+  # MTS files have DateTimeOriginal, MP4 files have LastUpdate, and MOV files 
+  # have CreateDate. This is just a casual observation, not something I 
+  # determined from any particular spec.
   case "${EXTENSION}" in
     mp4|MP4)
       DATETIME="$(exiftool -api largefilesupport=1 -s -s -s -d "%Y-%m-%dT%H%M%S%z" -LastUpdate ${FILE})"
@@ -20,6 +22,10 @@ do
     mts|MTS)
       DATETIME="$(exiftool -api largefilesupport=1 -s -s -s -d "%Y-%m-%dT%H%M%S%z" -DateTimeOriginal ${FILE})"
       FILEDATE="$(exiftool -api largefilesupport=1 -s -s -s -d "%m/%d/%Y %H:%M:%S" -DateTimeOriginal ${FILE})"
+      ;;
+    mov|MOV)
+      DATETIME="$(exiftool -api largefilesupport=1 -s -s -s -d "%Y-%m-%dT%H%M%S%z" -CreateDate ${FILE})"
+      FILEDATE="$(exiftool -api largefilesupport=1 -s -s -s -d "%m/%d/%Y %H:%M:%S" -CreateDate ${FILE})"
       ;;
     xml|XML)
       break # XML files handled later to make sure the name matches perfectly
