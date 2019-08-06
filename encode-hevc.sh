@@ -115,6 +115,8 @@ do
   -n
   "${START_ARG[@]}"
   "${STOP_ARG[@]}"
+  -fflags +genpts
+  -async 1
   -i "${INPUT}"
   -c:a libfdk_aac
   -c:v libx265
