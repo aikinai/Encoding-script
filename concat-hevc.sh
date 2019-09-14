@@ -113,19 +113,21 @@ do
   # break on the quotes in the subtitles option
   FFMPEG_ARGS=(
   -n
-  "${START_ARG[@]}"
-  "${STOP_ARG[@]}"
   -f concat
   -safe 0
   -fflags +genpts
   -async 1
+  -avoid_negative_ts make_zero
   -i concat.txt
+  "${START_ARG[@]}"
+  "${STOP_ARG[@]}"
   -c:a libfdk_aac
   -c:v libx265
   "${PRESET_ARG[@]}"
   "${CRF_ARG[@]}"
   -tag:v hvc1
   -flags +global_header
+  -movflags +faststart
   -map_metadata 0
   -map_metadata:s:v 0:s:v
   -map_metadata:s:a 0:s:a

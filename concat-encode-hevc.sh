@@ -115,11 +115,12 @@ do
   -n
   "${START_ARG[@]}"
   "${STOP_ARG[@]}"
-  -safe 0
   -f concat
-  -i concat.txt
+  -safe 0
   -fflags +genpts
+  -async 1
   -avoid_negative_ts make_zero
+  -i concat.txt
   -c:a libfdk_aac
   -c:v libx265
   "${PRESET_ARG[@]}"
