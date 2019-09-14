@@ -71,6 +71,15 @@ else
   PRESET_ARG=()
 fi
 
+# Set resolution if defined
+if [ -n "$SCALE" ]; then
+  SCALE_ARG=(
+  -vf scale="${SCALE}":-1
+  )
+else
+  SCALE_ARG=()
+fi
+
 for INPUT in "$@"
 do
   DIRECTORY="$(dirname "${INPUT}")"
@@ -122,6 +131,7 @@ do
   -c:v libx265
   "${PRESET_ARG[@]}"
   "${CRF_ARG[@]}"
+  "${SCALE_ARG[@]}"
   -tag:v hvc1
   -flags +global_header
   -movflags +faststart
