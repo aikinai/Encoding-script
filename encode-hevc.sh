@@ -268,6 +268,8 @@ do
       EXIF_CMD="${EXIF_CMD} -sep \", \" -keywords=\"${KEYWORDS}\""
     fi
     eval "$EXIF_CMD \"${OUTPUT}\""
+    # Clear these to avoid leaking to the next video if this is a loop
+    unset DESCRIPTION RATING KEYWORDS
   fi
 
   # Copy MacOS Finder tags from original file
