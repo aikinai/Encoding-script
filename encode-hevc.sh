@@ -164,7 +164,7 @@ do
   if [ -f "${DIRECTORY}"/"${BASENAME}".srt ]; then
     SUBTITLE_ARG=(
     -vf
-    "subtitles="${DIRECTORY}"/"${BASENAME}".srt:force_style='FontName=Hiragino Sans W7,Fontsize=40,OutlineColour=&H30333333,Bold=-1'"
+    "subtitles="${DIRECTORY}"/"${BASENAME}".srt:force_style='FontName=Myriad Pro,Fontsize=24,OutlineColour=&H30333333,Bold=600'"
     )
   else
     SUBTITLE_ARG=()
