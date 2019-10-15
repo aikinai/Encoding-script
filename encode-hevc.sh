@@ -127,13 +127,14 @@ fi
 for INPUT in "$@"
 do
   DIRECTORY="$(dirname "${INPUT}")"
+  FULLPATH="$(realpath "${DIRECTORY}")"
   BASENAME="$(basename "${INPUT%.*}")"
   EXTENSION="${INPUT##*.}"
   # Use same filename .mov for output
   # Or append -hevc if it already exists
-  OUTPUT="${DIRECTORY}/${BASENAME}.mov"
+  OUTPUT="${FULLPATH}/${BASENAME}.mov"
   if [ -f "${OUTPUT}" ]; then
-    OUTPUT="${DIRECTORY}/${BASENAME}-hevc.mov"
+    OUTPUT="${FULLPATH}/${BASENAME}-hevc.mov"
   fi
   # The MP4 spec calls for UTC time, so use that for the creation/encoding time
   case "${EXTENSION}" in
@@ -254,6 +255,9 @@ do
     if [ -n "$DESCRIPTION" ]; then
       echo -e "\x1B[00;33mSet description to \x1B[01;35m${DESCRIPTION}\x1B[00m"
       EXIF_CMD="${EXIF_CMD} -description=\"${DESCRIPTION}\""
+      /usr/bin/osascript -e "set filepath to POSIX file \"${OUTPUT}\"" \
+        -e "set theFile to filepath as alias" \
+        -e "tell application \"Finder\" to set the comment of theFile to \"$DESCRIPTION\""
     fi
     if [ -n "$RATING" ]; then
       echo -e "\x1B[00;33mSet rating to \x1B[01;35m${RATING}\x1B[00m"
