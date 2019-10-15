@@ -240,6 +240,14 @@ do
     exiftool -api largefilesupport=1 -overwrite_original -TagsFromFile "$LOCATION" -Location:all "$OUTPUT"
   fi
 
+  # Use Finder/Spotlight comment as description if not set in environment
+  if [ -z "$DESCRIPTION" ]; then
+    COMMENT="$(mdls -raw -name kMDItemFinderComment "${INPUT}")"
+    if [ -n "$COMMENT" ] && [ "$COMMENT" != "(null)" ]; then
+      DESCRIPTION="$COMMENT"
+    fi
+  fi
+
   # Add description, rating, or keywords if they are set
   if [ -n "$DESCRIPTION" ] || [ -n "$RATING" ] || [ -n "$KEYWORDS" ]; then
     EXIF_CMD="exiftool -api largefilesupport=1 -overwrite_original"
