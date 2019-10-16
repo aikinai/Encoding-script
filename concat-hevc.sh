@@ -61,7 +61,7 @@ else
   )
 fi
 
-# Set x265 parameter if defined
+# Set x265 preset if defined
 if [ -n "$PRESET" ]; then
   PRESET_ARG=(
   -preset
@@ -71,18 +71,79 @@ else
   PRESET_ARG=()
 fi
 
+# Set x265 tuning if defined
+if [ -n "$TUNE" ]; then
+  TUNE_ARG=(
+  -tune
+  "${TUNE}"
+  )
+else
+  TUNE_ARG=()
+fi
+
+# Set filter if defined
+if [ -n "$FILTER" ]; then
+  FILTER_ARG=(
+  -vf
+  "${FILTER}"
+  )
+else
+  FILTER_ARG=()
+fi
+
+# Set resolution if defined
+if [ -n "$SCALE" ]; then
+  SCALE_ARG=(
+  -vf scale="${SCALE}":-1
+  )
+else
+  SCALE_ARG=()
+fi
+
+# Set camera metadata unless disabled
+if [ -n "$NOTCAMERA" ]; then
+  CAMERA_ARG=()
+else
+  CAMERA_ARG=(
+  -metadata make'='"Sony"
+  -metadata model'='"ILCE-6500"
+  )
+fi
+
+# Encode both audio streams if bilingual parameter is set
+# For now, arguments hard-coded to match NHK's Curious George stream
+# with video in 0, Japanese in 1, and English in 11
+if [ -n "$BILINGUAL" ]; then
+  BILINGUAL_ARG=(
+  -map 0:0 -map 0:1 -map 0:11
+  -metadata:s:v:0 language=jpn
+  -metadata:s:a:0 language=jpn
+  -metadata:s:a:1 language=eng
+  )
+else
+  BILINGUAL_ARG=()
+fi
+
 for INPUT in "$@"
 do
   DIRECTORY="$(dirname "${INPUT}")"
+  FULLPATH="$(realpath "${DIRECTORY}")"
   BASENAME="$(basename "${INPUT%.*}")"
+  EXTENSION="${INPUT##*.}"
   # Use same filename .mov for output
   # Or append -hevc if it already exists
-  OUTPUT="${DIRECTORY}/${BASENAME}.mov"
+  OUTPUT="${FULLPATH}/${BASENAME}.mov"
   if [ -f "${OUTPUT}" ]; then
-    OUTPUT="${DIRECTORY}/${BASENAME}-hevc.mov"
+    OUTPUT="${FULLPATH}/${BASENAME}-hevc.mov"
   fi
   # The MP4 spec calls for UTC time, so use that for the creation/encoding time
-  TIME_UTC="$(TZ=UTC stat -c '%y' "$INPUT" | sed 's/\.00000.*//')"
+  case "${EXTENSION}" in
+    m2ts|M2TS)
+      TIME_UTC="$(TZ=UTC date -d "$(mediainfo --Inform="General;%Duration_Start%" *.m2ts | sed -e "s/UTC //")+09:00" +"%Y-%m-%d %H:%M:00")"
+      ;;
+    *)
+  TIME_UTC="$(TZ=UTC stat -c '%y' "$INPUT" | sed -n 's/\([[:digit:]]\{4\}-[[:digit:]]\{2\}-[[:digit:]]\{2\} [[:digit:]]\{2\}:[[:digit:]]\{2\}:[[:digit:]]\{2\}\).*/\1/p')"
+  esac
 
   # Set rotate argument based on MacOS Finder tags
   if [[ "$(tag -lN "$INPUT")" = *"↻"* ]]; then
@@ -103,7 +164,7 @@ do
   if [ -f "${DIRECTORY}"/"${BASENAME}".srt ]; then
     SUBTITLE_ARG=(
     -vf
-    "subtitles="${DIRECTORY}"/"${BASENAME}".srt:force_style='FontName=Hiragino Sans W7,Fontsize=40,OutlineColour=&H30333333,Bold=-1'"
+    "subtitles="${DIRECTORY}"/"${BASENAME}".srt:force_style='FontName=Myriad Pro,Fontsize=24,OutlineColour=&H30333333,Bold=600'"
     )
   else
     SUBTITLE_ARG=()
@@ -121,20 +182,24 @@ do
   -i concat.txt
   "${START_ARG[@]}"
   "${STOP_ARG[@]}"
-  -c:a libfdk_aac
   -c:v libx265
+  -c:a libfdk_aac
   "${PRESET_ARG[@]}"
+  "${TUNE_ARG[@]}"
   "${CRF_ARG[@]}"
+  "${SCALE_ARG[@]}"
+  "${FILTER_ARG[@]}"
+  "${BILINGUAL_ARG[@]}"
   -tag:v hvc1
   -flags +global_header
+  -movflags use_metadata_tags
   -movflags +faststart
   -map_metadata 0
   -map_metadata:s:v 0:s:v
   -map_metadata:s:a 0:s:a
   -metadata creation_time'='"${TIME_UTC}"
   -metadata creation_date'='"${TIME_UTC}"
-  -metadata make'='"Sony"
-  -metadata model'='"ILCE-6500"
+  "${CAMERA_ARG[@]}"
   "${SUBTITLE_ARG[@]}"
   "${ROTATE_ARG[@]}"
   "$OUTPUT"
@@ -164,6 +229,13 @@ do
       DATETIME="$(exiftool -api largefilesupport=1 -s -s -s -DateTimeOriginal "${INPUT}" | sed -e 's/ [[:alpha:]]\+$//')"
       exiftool -api largefilesupport=1 -overwrite_original -DateTimeOriginal="${DATETIME}" -CreationDate="${DATETIME}" "${OUTPUT}"
       ;;
+    m2ts|M2TS)
+      echo -e "\x1B[00;33mSet CreationDate and DateTimeOriginal from \x1B[01;35m${INPUT}\x1B[00;33m Duration_Start\x1B[00m"
+      # DateTimeOriginal in MTS files has "DST" and such at the end which can't be written to MOV files,
+      # so strip that manually and then separately write to the MOV file instead of copying
+      DATETIME="$(date -d "$(mediainfo --Inform="General;%Duration_Start%" ${INPUT} | sed -e "s/UTC //")" +"%Y:%m:%d %H:%M:00%:z")"
+      exiftool -api largefilesupport=1 -overwrite_original -DateTimeOriginal="${DATETIME}" -CreationDate="${DATETIME}" "${OUTPUT}"
+      ;;
   esac
 
   # Copy location from other file if specified
@@ -172,12 +244,23 @@ do
     exiftool -api largefilesupport=1 -overwrite_original -TagsFromFile "$LOCATION" -Location:all "$OUTPUT"
   fi
 
+  # Use Finder/Spotlight comment as description if not set in environment
+  if [ -z "$DESCRIPTION" ]; then
+    COMMENT="$(mdls -raw -name kMDItemFinderComment "${INPUT}")"
+    if [ -n "$COMMENT" ] && [ "$COMMENT" != "(null)" ]; then
+      DESCRIPTION="$COMMENT"
+    fi
+  fi
+
   # Add description, rating, or keywords if they are set
   if [ -n "$DESCRIPTION" ] || [ -n "$RATING" ] || [ -n "$KEYWORDS" ]; then
     EXIF_CMD="exiftool -api largefilesupport=1 -overwrite_original"
     if [ -n "$DESCRIPTION" ]; then
       echo -e "\x1B[00;33mSet description to \x1B[01;35m${DESCRIPTION}\x1B[00m"
       EXIF_CMD="${EXIF_CMD} -description=\"${DESCRIPTION}\""
+      /usr/bin/osascript -e "set filepath to POSIX file \"${OUTPUT}\"" \
+        -e "set theFile to filepath as alias" \
+        -e "tell application \"Finder\" to set the comment of theFile to \"$DESCRIPTION\""
     fi
     if [ -n "$RATING" ]; then
       echo -e "\x1B[00;33mSet rating to \x1B[01;35m${RATING}\x1B[00m"
