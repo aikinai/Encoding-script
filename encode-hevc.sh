@@ -130,11 +130,13 @@ do
   FULLPATH="$(realpath "${DIRECTORY}")"
   BASENAME="$(basename "${INPUT%.*}")"
   EXTENSION="${INPUT##*.}"
-  # Use same filename .mov for output
-  # Or append -hevc if it already exists
-  OUTPUT="${FULLPATH}/${BASENAME}.mov"
-  if [ -f "${OUTPUT}" ]; then
-    OUTPUT="${FULLPATH}/${BASENAME}-hevc.mov"
+  # Use same FILENAME.mov for output, unless defined in OUTPUT
+  # Append -hevc if it already exists
+  if [ -z "$OUTPUT" ]; then
+    OUTPUT="${FULLPATH}/${BASENAME}.mov"
+    if [ -f "${OUTPUT}" ]; then
+      OUTPUT="${FULLPATH}/${BASENAME}-hevc.mov"
+    fi
   fi
   # The MP4 spec calls for UTC time, so use that for the creation/encoding time
   case "${EXTENSION}" in
@@ -282,4 +284,5 @@ do
     -d "$(GetFileInfo -d "$INPUT")" \
     -m "$(GetFileInfo -m "$INPUT")" \
     "$OUTPUT"
+  unset OUTPUT
 done
