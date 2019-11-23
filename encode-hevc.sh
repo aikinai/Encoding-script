@@ -163,13 +163,23 @@ do
   fi
 
   # Insert subtitles if SRT file exists in the same directory
+  # This has a quick'n'dirty merger with the freeform FILTER parameter above
+  # I should clean it up sometime
+  SUBTITLE_ARG=()
   if [ -f "${DIRECTORY}"/"${BASENAME}".srt ]; then
+    # Append subtitles to existing filter if already defined
+    if [ -n "$FILTER" ]; then
+      FILTER_ARG=(
+        -vf
+        "${FILTER}, subtitles="${DIRECTORY}"/"${BASENAME}".srt:force_style='FontName=Myriad Pro,Fontsize=24,OutlineColour=&H30333333,Bold=600'"
+      )
+      echo "${FILTER_ARG}"
+    else # Otherwise set subtitles in their own filter
     SUBTITLE_ARG=(
     -vf
     "subtitles="${DIRECTORY}"/"${BASENAME}".srt:force_style='FontName=Myriad Pro,Fontsize=24,OutlineColour=&H30333333,Bold=600'"
     )
-  else
-    SUBTITLE_ARG=()
+    fi
   fi
 
   # Set up ffmpeg arguments as an array since this is more robust and doesn't 
