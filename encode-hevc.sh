@@ -138,6 +138,15 @@ do
       OUTPUT="${FULLPATH}/${BASENAME}-hevc.mov"
     fi
   fi
+  # M4V extension doesn't default to mp4 format by default,
+  # so force it if an M4V output is explicitly specified
+  if [[ ${OUTPUT} == *.m4v ]]; then
+    FORMAT_ARG=(
+      -f mp4
+    )
+  else
+    FORMAT_ARG=()
+  fi
   # The MP4 spec calls for UTC time, so use that for the creation/encoding time
   case "${EXTENSION}" in
     m2ts|M2TS)
@@ -211,6 +220,7 @@ do
   "${CAMERA_ARG[@]}"
   "${SUBTITLE_ARG[@]}"
   "${ROTATE_ARG[@]}"
+  "${FORMAT_ARG[@]}"
   "$OUTPUT"
   )
 
