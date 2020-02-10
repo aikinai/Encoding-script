@@ -210,7 +210,6 @@ do
   "${BILINGUAL_ARG[@]}"
   -tag:v hvc1
   -flags +global_header
-  -movflags use_metadata_tags
   -movflags +faststart
   -map_metadata 0
   -map_metadata:s:v 0:s:v
