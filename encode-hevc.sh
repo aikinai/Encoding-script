@@ -167,6 +167,11 @@ do
     -vf
     "transpose=2"
     )
+  elif [[ "$(tag -lN "$INPUT")" = *"⇅"* ]]; then
+    ROTATE_ARG=(
+    -vf
+    "transpose=2,transpose=2"
+    )
   else
     ROTATE_ARG=()
   fi
