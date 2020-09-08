@@ -106,7 +106,7 @@ if [ -n "$NOTCAMERA" ]; then
 else
   CAMERA_ARG=(
   -metadata make'='"Sony"
-  -metadata model'='"ILCE-6500"
+  -metadata model'='"ILCE-6600"
   )
 fi
 
