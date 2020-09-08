@@ -36,7 +36,7 @@ do
   NEWNAME="${DATETIME}.${EXTENSION}"
   DESTINATION="${DIRECTORY}"/"${NEWNAME}"
   echo -e "Rename ${FILE} → \x1B[00;33m${NEWNAME}\x1B[00m"
-  mv -iv "${FILE}" "${DESTINATION}"
+  mv -uv "${FILE}" "${DESTINATION}"
 
   # Rename matching XML file if it exists
   # The for loop is the best way to test if the file exists with globbing
@@ -46,7 +46,7 @@ do
   for XMLFILE in "${BASENAME}"*.XML; do
     if [ -e "$XMLFILE" ]; then
       echo -e "Rename ${XMLFILE} → \x1B[00;33m${DATETIME}.xml\x1B[00m"
-      mv -iv "${XMLFILE}" "${DIRECTORY}"/"${DATETIME}".xml
+      mv -uv "${XMLFILE}" "${DIRECTORY}"/"${DATETIME}".xml
     fi
     # Don't actually need the loop, so break if it finds one
     break
