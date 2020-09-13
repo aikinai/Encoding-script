@@ -24,8 +24,8 @@ do
       FILEDATE="$(exiftool -api largefilesupport=1 -s -s -s -d "%m/%d/%Y %H:%M:%S" -DateTimeOriginal "${FILE}")"
       ;;
     mov|MOV)
-      DATETIME="$(exiftool -api largefilesupport=1 -s -s -s -d "%Y-%m-%dT%H%M%S%z" -CreateDate "${FILE}")"
-      FILEDATE="$(exiftool -api largefilesupport=1 -s -s -s -d "%m/%d/%Y %H:%M:%S" -CreateDate "${FILE}")"
+      DATETIME="$(exiftool -api largefilesupport=1 -s -s -s -d "%Y-%m-%dT%H%M%S%z" -CreationDate "${FILE}")"
+      FILEDATE="$(exiftool -api largefilesupport=1 -s -s -s -d "%m/%d/%Y %H:%M:%S" -CreationDate "${FILE}")"
       ;;
     xml|XML)
       break # XML files handled later to make sure the name matches perfectly
