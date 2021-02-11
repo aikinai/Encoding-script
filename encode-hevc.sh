@@ -207,6 +207,7 @@ do
   "${STOP_ARG[@]}"
   -c:v libx265
   -c:a libfdk_aac
+  -pix_fmt yuv420p
   "${PRESET_ARG[@]}"
   "${TUNE_ARG[@]}"
   "${CRF_ARG[@]}"
