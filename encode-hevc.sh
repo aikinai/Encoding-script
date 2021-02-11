@@ -222,6 +222,7 @@ do
   -map_metadata:s:a 0:s:a
   -metadata creation_time'='"${TIME_UTC}"
   -metadata creation_date'='"${TIME_UTC}"
+  -write_tmcd 0
   "${CAMERA_ARG[@]}"
   "${SUBTITLE_ARG[@]}"
   "${ROTATE_ARG[@]}"
