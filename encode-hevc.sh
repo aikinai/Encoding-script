@@ -94,7 +94,7 @@ fi
 # Set resolution if defined
 if [ -n "$SCALE" ]; then
   SCALE_ARG=(
-  -vf scale="${SCALE}":-1
+  -vf scale=-1:"${SCALE}"
   )
 else
   SCALE_ARG=()
