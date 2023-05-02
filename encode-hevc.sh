@@ -207,6 +207,23 @@ do
     fi
   fi
 
+  # Check if the input video is HDR
+  # COLOR_PRIMARIES=$(mediainfo --Inform="Video;%colour_primaries%" "${INPUT}")
+  # if [ "$COLOR_PRIMARIES" = "BT.2020" ]; then
+    export HDR=true
+  # fi
+
+  # Set color metadata for HDR videos
+  if [ -n "$HDR" ]; then
+    COLOR_ARG=(
+      -color_primaries bt2020
+      -color_trc arib-std-b67
+      -colorspace bt2020nc
+      )
+  else
+    COLOR_ARG=()
+  fi
+
   # Set up ffmpeg arguments as an array since this is more robust and doesn't 
   # break on the quotes in the subtitles option
   FFMPEG_ARGS=(
@@ -236,6 +253,7 @@ do
   -metadata creation_date'='"${TIME_UTC}"
   -write_tmcd 0
   "${CAMERA_ARG[@]}"
+  "${COLOR_ARG[@]}"
   "${SUBTITLE_ARG[@]}"
   "${ROTATE_ARG[@]}"
   "${FORMAT_ARG[@]}"
