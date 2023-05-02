@@ -124,6 +124,17 @@ else
   BILINGUAL_ARG=()
 fi
 
+# Set separate video source
+if [ -n "$VIDEO" ]; then
+  VIDEO_ARG=(
+    -i "${VIDEO}"
+    -map 1:v:0
+    -map 0:a:0
+    )
+else
+  VIDEO_ARG=()
+fi
+
 for INPUT in "$@"
 do
   DIRECTORY="$(dirname "${INPUT}")"
@@ -203,6 +214,7 @@ do
   -fflags +genpts
   -async 1
   -i "${INPUT}"
+  "${VIDEO_ARG[@]}"
   "${START_ARG[@]}"
   "${STOP_ARG[@]}"
   -c:v libx265
