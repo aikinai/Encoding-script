@@ -57,7 +57,7 @@ if [ -n "$CRF" ]; then
 else
   CRF_ARG=(
   "-crf"
-  "23"
+  "28"
   )
 fi
 
@@ -198,7 +198,6 @@ do
         -vf
         "${FILTER}, subtitles="${DIRECTORY}"/"${BASENAME}".srt:force_style='FontName=Myriad Pro,Fontsize=24,OutlineColour=&H30333333,Bold=600'"
       )
-      echo "${FILTER_ARG}"
     else # Otherwise set subtitles in their own filter
     SUBTITLE_ARG=(
     -vf
