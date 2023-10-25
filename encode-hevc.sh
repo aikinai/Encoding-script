@@ -135,6 +135,19 @@ else
   VIDEO_ARG=()
 fi
 
+
+# Encode without audio if NOAUDIO is set.
+# Otherwise use FDK AAC
+if [ -n "$NOAUDIO" ]; then
+  AUDIO_ARG=(
+  -an
+  )
+else
+  AUDIO_ARG=(
+  -c:a libfdk_aac
+    )
+fi
+
 for INPUT in "$@"
 do
   DIRECTORY="$(dirname "${INPUT}")"
