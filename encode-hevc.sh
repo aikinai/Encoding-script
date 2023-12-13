@@ -223,21 +223,26 @@ do
     fi
   fi
 
-  # Check if the input video is HDR
-  # COLOR_PRIMARIES=$(mediainfo --Inform="Video;%colour_primaries%" "${INPUT}")
-  # if [ "$COLOR_PRIMARIES" = "BT.2020" ]; then
-    export HDR=true
-  # fi
-
-  # Set color metadata for HDR videos
-  if [ -n "$HDR" ]; then
+  # Set color parameters and pixel format for SDR or HDR
+  COLOR_PRIMARIES=$(mediainfo --Inform="Video;%colour_primaries%" "${INPUT}")
+  if [ "$COLOR_PRIMARIES" = "BT.2020" ]; then
     COLOR_ARG=(
       -color_primaries bt2020
-      -color_trc arib-std-b67
+      -color_trc smpte2084
       -colorspace bt2020nc
       )
+    PIXFMT_ARG=(
+      -pix_fmt yuv420p10
+    )
   else
-    COLOR_ARG=()
+    COLOR_ARG=(
+      -colorspace bt709
+      -color_primaries bt709
+      -color_trc bt709
+      -color_range tv)
+    PIXFMT_ARG=(
+      -pix_fmt yuv420p
+    )
   fi
 
   # Set up ffmpeg arguments as an array since this is more robust and doesn't 
@@ -252,7 +257,7 @@ do
   "${STOP_ARG[@]}"
   -c:v libx265
   -c:a libfdk_aac
-  -pix_fmt yuv420p
+  "${PIXFMT_ARG[@]}"
   "${PRESET_ARG[@]}"
   "${TUNE_ARG[@]}"
   "${CRF_ARG[@]}"
