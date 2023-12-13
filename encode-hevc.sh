@@ -125,7 +125,6 @@ else
   VIDEO_ARG=()
 fi
 
-
 # Encode without audio if NOAUDIO is set.
 # Otherwise use FDK AAC
 if [ -n "$NOAUDIO" ]; then
@@ -152,10 +151,28 @@ do
       OUTPUT="${FULLPATH}/${BASENAME}-hevc.mov"
     fi
   fi
+
   # If separate file for metadata source is not set, default to input video
   if [ -z "$METADATA" ]; then
     METADATA="${INPUT}"
   fi
+
+  # Add external subtitles if SUBTITLES is defined
+  SUBTITLE_ARG=()
+  if [ -n "${SUBTITLES}" ]; then
+    SUBTITLE_ARG+=(
+    -i "${SUBTITLES}"
+  )
+  fi
+
+  # Check for subtitles in the source file and set codec and metadata
+  if [ -n "$(mediainfo --Inform="Text;%ID%" "${INPUT}")" ]; then
+    SUBTITLE_ARG+=(
+      -c:s mov_text
+      -metadata:s:s:0 language=eng # Assuming English subtitles
+    )
+  fi
+
   # M4V extension doesn't default to mp4 format by default,
   # so force it if an M4V output is explicitly specified
   if [[ ${OUTPUT} == *.m4v ]]; then
@@ -204,10 +221,11 @@ do
     ROTATE_ARG=()
   fi
 
-  # Insert subtitles if SRT file exists in the same directory
+  # Burn in subtitles if SRT file exists in the same directory
   # This has a quick'n'dirty merger with the freeform FILTER parameter above
-  # I should clean it up sometime
-  SUBTITLE_ARG=()
+  # It also conflicts with the newer soft subtitle parameters I have elsewhere
+  # I should really clean it up sometime
+  BURNEDSUBTITLE_ARG=()
   if [ -f "${DIRECTORY}"/"${BASENAME}".srt ]; then
     # Append subtitles to existing filter if already defined
     if [ -n "$FILTER" ]; then
@@ -216,7 +234,7 @@ do
         "${FILTER}, subtitles="${DIRECTORY}"/"${BASENAME}".srt:force_style='FontName=Myriad Pro,Fontsize=24,OutlineColour=&H30333333,Bold=600'"
       )
     else # Otherwise set subtitles in their own filter
-    SUBTITLE_ARG=(
+    BURNEDSUBTITLE_ARG=(
     -vf
     "subtitles="${DIRECTORY}"/"${BASENAME}".srt:force_style='FontName=Myriad Pro,Fontsize=24,OutlineColour=&H30333333,Bold=600'"
     )
@@ -253,10 +271,11 @@ do
   -async 1
   -i "${INPUT}"
   "${VIDEO_ARG[@]}"
+  "${SUBTITLE_ARG[@]}"
   "${START_ARG[@]}"
   "${STOP_ARG[@]}"
   -c:v libx265
-  -c:a libfdk_aac
+  "${AUDIO_ARG[@]}"
   "${PIXFMT_ARG[@]}"
   "${PRESET_ARG[@]}"
   "${TUNE_ARG[@]}"
@@ -275,7 +294,7 @@ do
   -write_tmcd 0
   "${CAMERA_ARG[@]}"
   "${COLOR_ARG[@]}"
-  "${SUBTITLE_ARG[@]}"
+  "${BURNEDSUBTITLE_ARG[@]}"
   "${ROTATE_ARG[@]}"
   "${FORMAT_ARG[@]}"
   "$OUTPUT"
