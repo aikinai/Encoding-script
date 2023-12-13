@@ -152,6 +152,10 @@ do
       OUTPUT="${FULLPATH}/${BASENAME}-hevc.mov"
     fi
   fi
+  # If separate file for metadata source is not set, default to input video
+  if [ -z "$METADATA" ]; then
+    METADATA="${INPUT}"
+  fi
   # M4V extension doesn't default to mp4 format by default,
   # so force it if an M4V output is explicitly specified
   if [[ ${OUTPUT} == *.m4v ]]; then
@@ -164,10 +168,10 @@ do
   # The MP4 spec calls for UTC time, so use that for the creation/encoding time
   case "${EXTENSION}" in
     m2ts|M2TS)
-      TIME_UTC="$(TZ=UTC date -d "$(mediainfo --Inform="General;%Duration_Start%" "${INPUT}" | sed -e "s/UTC //")+09:00" +"%Y-%m-%d %H:%M:00")"
+      TIME_UTC="$(TZ=UTC date -d "$(mediainfo --Inform="General;%Duration_Start%" "${METADATA}" | sed -e "s/UTC //")+09:00" +"%Y-%m-%d %H:%M:00")"
       ;;
     *)
-  TIME_UTC="$(TZ=UTC stat -c '%y' "$INPUT" | sed -n 's/\([[:digit:]]\{4\}-[[:digit:]]\{2\}-[[:digit:]]\{2\} [[:digit:]]\{2\}:[[:digit:]]\{2\}:[[:digit:]]\{2\}\).*/\1/p')"
+  TIME_UTC="$(TZ=UTC stat -c '%y' "$METADATA" | sed -n 's/\([[:digit:]]\{4\}-[[:digit:]]\{2\}-[[:digit:]]\{2\} [[:digit:]]\{2\}:[[:digit:]]\{2\}:[[:digit:]]\{2\}\).*/\1/p')"
   esac
 
   # Set camera metadata
@@ -279,28 +283,28 @@ do
     ffmpeg "${FFMPEG_ARGS[@]}"
 
   # Use exiftool to copy more metadata that FFMPEG misses
-  echo -e "\x1B[00;33mCopy all metadata from \x1B[01;35m${INPUT}\x1B[00m"
+  echo -e "\x1B[00;33mCopy all metadata from \x1B[01;35m${METADATA}\x1B[00m"
   # Try to copy everything first, but this will still miss some important tags
-  exiftool -api largefilesupport=1 -overwrite_original -extractEmbedded -TagsFromFile "$INPUT" "-all:all>all:all" "$OUTPUT"
+  exiftool -api largefilesupport=1 -overwrite_original -extractEmbedded -TagsFromFile "$METADATA" "-all:all>all:all" "$OUTPUT"
   # Copy the important date/time tags that have time zone and seem to be respected by Apple
   case "${EXTENSION}" in
     mp4|MP4)
-      echo -e "\x1B[00;33mSet CreationDate and DateTimeOriginal from \x1B[01;35m${INPUT}\x1B[00;33m CreationDateValue\x1B[00m"
+      echo -e "\x1B[00;33mSet CreationDate and DateTimeOriginal from \x1B[01;35m${METADATA}\x1B[00;33m CreationDateValue\x1B[00m"
       # MP4 dates have the same format but need to go from CreationDateValue to CreationDate
-      exiftool -api largefilesupport=1 -overwrite_original -tagsfromfile "${INPUT}" '-CreationDate<CreationDateValue' '-DateTimeOriginal<CreationDateValue' "${OUTPUT}"
+      exiftool -api largefilesupport=1 -overwrite_original -tagsfromfile "${METADATA}" '-CreationDate<CreationDateValue' '-DateTimeOriginal<CreationDateValue' "${OUTPUT}"
       ;;
     mts|MTS)
-      echo -e "\x1B[00;33mSet CreationDate and DateTimeOriginal from \x1B[01;35m${INPUT}\x1B[00;33m CreationDate\x1B[00m"
+      echo -e "\x1B[00;33mSet CreationDate and DateTimeOriginal from \x1B[01;35m${METADATA}\x1B[00;33m CreationDate\x1B[00m"
       # DateTimeOriginal in MTS files has "DST" and such at the end which can't be written to MOV files,
       # so strip that manually and then separately write to the MOV file instead of copying
-      DATETIME="$(exiftool -api largefilesupport=1 -s -s -s -DateTimeOriginal "${INPUT}" | sed -e 's/ [[:alpha:]]\+$//')"
+      DATETIME="$(exiftool -api largefilesupport=1 -s -s -s -DateTimeOriginal "${METADATA}" | sed -e 's/ [[:alpha:]]\+$//')"
       exiftool -api largefilesupport=1 -overwrite_original -DateTimeOriginal="${DATETIME}" -CreationDate="${DATETIME}" "${OUTPUT}"
       ;;
     m2ts|M2TS)
-      echo -e "\x1B[00;33mSet CreationDate and DateTimeOriginal from \x1B[01;35m${INPUT}\x1B[00;33m Duration_Start\x1B[00m"
+      echo -e "\x1B[00;33mSet CreationDate and DateTimeOriginal from \x1B[01;35m${METADATA}\x1B[00;33m Duration_Start\x1B[00m"
       # DateTimeOriginal in MTS files has "DST" and such at the end which can't be written to MOV files,
       # so strip that manually and then separately write to the MOV file instead of copying
-      DATETIME="$(date -d "$(mediainfo --Inform="General;%Duration_Start%" ${INPUT} | sed -e "s/UTC //")" +"%Y:%m:%d %H:%M:00%:z")"
+      DATETIME="$(date -d "$(mediainfo --Inform="General;%Duration_Start%" ${METADATA} | sed -e "s/UTC //")" +"%Y:%m:%d %H:%M:00%:z")"
       exiftool -api largefilesupport=1 -overwrite_original -DateTimeOriginal="${DATETIME}" -CreationDate="${DATETIME}" "${OUTPUT}"
       ;;
   esac
@@ -313,7 +317,7 @@ do
 
   # Use Finder/Spotlight comment as description if not set in environment
   if [ -z "$DESCRIPTION" ]; then
-    COMMENT="$(mdls -raw -name kMDItemFinderComment "${INPUT}")"
+    COMMENT="$(mdls -raw -name kMDItemFinderComment "${METADATA}")"
     if [ -n "$COMMENT" ] && [ "$COMMENT" != "(null)" ]; then
       DESCRIPTION="$COMMENT"
     fi
@@ -343,14 +347,14 @@ do
   fi
 
   # Copy MacOS Finder tags from original file
-  echo -e "\x1B[00;33mCopy MacOS Finder tags from \x1B[01;35m${INPUT}\x1B[00m"
-  tag --add "$(tag --no-name --list "$INPUT")" "$OUTPUT"
+  echo -e "\x1B[00;33mCopy MacOS Finder tags from \x1B[01;35m${METADATA}\x1B[00m"
+  tag --add "$(tag --no-name --list "$METADATA")" "$OUTPUT"
 
   # Copy created and modified dates from original file
-  echo -e "\x1B[00;33mCopy file created and modified date from \x1B[01;35m${INPUT}\x1B[00m"
+  echo -e "\x1B[00;33mCopy file created and modified date from \x1B[01;35m${METADATA}\x1B[00m"
   SetFile \
-    -d "$(GetFileInfo -d "$INPUT")" \
-    -m "$(GetFileInfo -m "$INPUT")" \
+    -d "$(GetFileInfo -d "$METADATA")" \
+    -m "$(GetFileInfo -m "$METADATA")" \
     "$OUTPUT"
   unset OUTPUT
 done
