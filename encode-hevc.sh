@@ -100,16 +100,6 @@ else
   SCALE_ARG=()
 fi
 
-# Set camera metadata unless disabled
-if [ -n "$NOTCAMERA" ]; then
-  CAMERA_ARG=()
-else
-  CAMERA_ARG=(
-  -metadata make'='"Sony"
-  -metadata model'='"ILCE-6600"
-  )
-fi
-
 # Encode both audio streams if bilingual parameter is set
 # For now, arguments hard-coded to match NHK's Curious George stream
 # with video in 0, Japanese in 1, and English in 11
@@ -179,6 +169,16 @@ do
     *)
   TIME_UTC="$(TZ=UTC stat -c '%y' "$INPUT" | sed -n 's/\([[:digit:]]\{4\}-[[:digit:]]\{2\}-[[:digit:]]\{2\} [[:digit:]]\{2\}:[[:digit:]]\{2\}:[[:digit:]]\{2\}\).*/\1/p')"
   esac
+
+  # Set camera metadata
+  if [ "$(exiftool -DeviceModelName "${INPUT}" | grep -q "ILCE-7CM2")" ]; then
+    CAMERA_ARG=(
+      -metadata make='Sony'
+      -metadata model='ILCE-7CM2'
+    )
+  else
+    CAMERA_ARG=()
+  fi
 
   # Set rotate argument based on MacOS Finder tags
   if [[ "$(tag -lN "$INPUT")" = *"↻"* ]]; then
