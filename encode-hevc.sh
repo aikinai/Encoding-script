@@ -57,7 +57,7 @@ if [ -n "$CRF" ]; then
 else
   CRF_ARG=(
   "-crf"
-  "28"
+  "23"
   )
 fi
 
@@ -143,6 +143,10 @@ do
   FULLPATH="$(realpath "${DIRECTORY}")"
   BASENAME="$(basename "${INPUT%.*}")"
   EXTENSION="${INPUT##*.}"
+
+  # Reset OUTPUT and METADATA for each file
+  OUTPUT=""
+
   # Use same FILENAME.mov for output, unless defined in OUTPUT
   # Append -hevc if it already exists
   if [ -z "$OUTPUT" ]; then
@@ -153,8 +157,10 @@ do
   fi
 
   # If separate file for metadata source is not set, default to input video
-  if [ -z "$METADATA" ]; then
-    METADATA="${INPUT}"
+  if [ -z "$METADATA_SOURCE" ]; then
+    METADATA="$INPUT"  # Default METADATA to current input file
+  else
+    METADATA="$METADATA_SOURCE"  # Use METADATA_SOURCE if it's specified
   fi
 
   # Add external subtitles if SUBTITLES is defined
@@ -165,11 +171,22 @@ do
   )
   fi
 
+  # Add external subtitles if SUBTITLES is defined
+  if [ -n "${SUBTITLES}" ]; then
+    SUBTITLE_ARG+=(
+    -i "${SUBTITLES}"
+  )
+  fi
+
   # Check for subtitles in the source file and set codec and metadata
   if [ -n "$(mediainfo --Inform="Text;%ID%" "${INPUT}")" ]; then
+    if [ -z "${SUB_LANG}" ]; then
+      SUB_LANG="eng" # Assume English if subtitle language is not specified
+    fi
+
     SUBTITLE_ARG+=(
       -c:s mov_text
-      -metadata:s:s:0 language=eng # Assuming English subtitles
+      -metadata:s:s:0 language="${SUB_LANG}"
     )
   fi
 
@@ -191,14 +208,14 @@ do
   TIME_UTC="$(TZ=UTC stat -c '%y' "$METADATA" | sed -n 's/\([[:digit:]]\{4\}-[[:digit:]]\{2\}-[[:digit:]]\{2\} [[:digit:]]\{2\}:[[:digit:]]\{2\}:[[:digit:]]\{2\}\).*/\1/p')"
   esac
 
-  # Set camera metadata
-  if [ "$(exiftool -DeviceModelName "${INPUT}" | grep -q "ILCE-7CM2")" ]; then
+  # Set camera metadata as A7C2 unless NOTCAMERA is set
+  if [ -n "$NOTCAMERA" ]; then
+    CAMERA_ARG=()
+  else
     CAMERA_ARG=(
       -metadata make='Sony'
       -metadata model='ILCE-7CM2'
     )
-  else
-    CAMERA_ARG=()
   fi
 
   # Set rotate argument based on MacOS Finder tags
@@ -268,7 +285,6 @@ do
   FFMPEG_ARGS=(
   -n
   -fflags +genpts
-  -async 1
   -i "${INPUT}"
   "${VIDEO_ARG[@]}"
   "${SUBTITLE_ARG[@]}"
@@ -305,7 +321,6 @@ do
   # hvc1 tag is required for Quicktime playback
   TZ="UTC" \
     ffmpeg "${FFMPEG_ARGS[@]}"
-
   # Use exiftool to copy more metadata that FFMPEG misses
   echo -e "\x1B[00;33mCopy all metadata from \x1B[01;35m${METADATA}\x1B[00m"
   # Try to copy everything first, but this will still miss some important tags
