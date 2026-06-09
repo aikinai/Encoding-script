@@ -28,7 +28,7 @@
 #   FILTER        Custom ffmpeg video filter chain.
 #   SCALE         Output height. Width is computed with -2 for 4:2:0 compatibility.
 #   NOAUDIO       If set, output has no audio.
-#   AUDIO_CODEC   Audio codec. Default: libfdk_aac.
+#   AUDIO_CODEC   Audio codec. Default: aac_at.
 #   BILINGUAL     Hard-coded NHK Curious George stream mapping.
 #   SUBTITLES     External subtitle file to add as soft subtitles.
 #   SUB_LANG      Subtitle language. Default: eng.
@@ -408,7 +408,7 @@ for INPUT in "$@"; do
   if [[ -n "${NOAUDIO:-}" ]]; then
     AUDIO_ARG=(-an)
   else
-    AUDIO_ARG=(-c:a "${AUDIO_CODEC:-libfdk_aac}")
+    AUDIO_ARG=(-c:a "${AUDIO_CODEC:-aac_at}")
   fi
 
   BILINGUAL_ARG=()
