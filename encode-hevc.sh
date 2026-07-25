@@ -484,24 +484,26 @@ for INPUT in "$@"; do
 
   set_color_args "$INPUT"
 
+  # Expand optional arg arrays with ${name[@]+"${name[@]}"} so empty arrays
+  # do not trip `set -u` on Bash < 4.4 (including macOS /bin/bash 3.2).
   FFMPEG_ARGS=(
     -n
     -fflags +genpts
-    "${START_ARG[@]}"
+    ${START_ARG[@]+"${START_ARG[@]}"}
     -i "$INPUT"
-    "${VIDEO_ARG[@]}"
-    "${SUBTITLE_INPUT_ARG[@]}"
-    "${STOP_ARG[@]}"
+    ${VIDEO_ARG[@]+"${VIDEO_ARG[@]}"}
+    ${SUBTITLE_INPUT_ARG[@]+"${SUBTITLE_INPUT_ARG[@]}"}
+    ${STOP_ARG[@]+"${STOP_ARG[@]}"}
     -c:v libx265
     "${AUDIO_ARG[@]}"
-    "${SUBTITLE_CODEC_ARG[@]}"
+    ${SUBTITLE_CODEC_ARG[@]+"${SUBTITLE_CODEC_ARG[@]}"}
     "${PIXFMT_ARG[@]}"
     "${PRESET_ARG[@]}"
-    "${TUNE_ARG[@]}"
+    ${TUNE_ARG[@]+"${TUNE_ARG[@]}"}
     "${CRF_ARG[@]}"
     "${X265_PARAMS_ARG[@]}"
-    "${FILTER_ARG[@]}"
-    "${BILINGUAL_ARG[@]}"
+    ${FILTER_ARG[@]+"${FILTER_ARG[@]}"}
+    ${BILINGUAL_ARG[@]+"${BILINGUAL_ARG[@]}"}
     -tag:v hvc1
     -flags +global_header
     -movflags +faststart
@@ -511,9 +513,9 @@ for INPUT in "$@"; do
     -metadata creation_time="$TIME_UTC"
     -metadata creation_date="$TIME_UTC"
     -write_tmcd 0
-    "${CAMERA_ARG[@]}"
+    ${CAMERA_ARG[@]+"${CAMERA_ARG[@]}"}
     "${COLOR_ARG[@]}"
-    "${FORMAT_ARG[@]}"
+    ${FORMAT_ARG[@]+"${FORMAT_ARG[@]}"}
     "$OUTPUT_PATH"
   )
 
